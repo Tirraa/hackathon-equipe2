@@ -15,7 +15,7 @@ export interface PowerOutput {
 export class WeatherService {
   private readonly BASE_URL = 'https://power.larc.nasa.gov/api/temporal';
   private readonly R = 287.05; // Constante spécifique de l'air sec en J/(kg·K)
-  private readonly RADIUS = 120; // Rayon des pales en mètres A M
+  private readonly RADIUS = 120; // Rayon des pales en mètres M
   private readonly CP = 0.45; // Coefficient de performance moyen
 
   private calculateAirDensity(
@@ -66,9 +66,11 @@ export class WeatherService {
   }
 
   private readonly PANEL_EFFICIENCY = 0.18; // Rendement moyen des panneaux solaires
+  private readonly PANEL_SURFACE = 2; // Surface du panneau en m² (par exemple 2m x 1m)
 
-  private calculateSolarPower(irradiation: number, panelArea: number): number {
-    return irradiation * panelArea * this.PANEL_EFFICIENCY;
+  private calculateSolarPower(irradiation: number): number {
+    const panelArea = this.PANEL_SURFACE; 
+    return irradiation * panelArea * this.PANEL_EFFICIENCY; 
   }
 
   private calculatePanelArea(panelWidth: number, panelHeight: number): number {
@@ -79,28 +81,26 @@ export class WeatherService {
     const res = await axios.get(
       `${this.BASE_URL}/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=2.3522&latitude=48.8566&start=20240301&end=20240310&format=JSON`,
     );
-
+  
     if (res?.data?.properties?.parameter) {
       const ghiData = res.data.properties.parameter.ALLSKY_SFC_SW_DWN;
-      const panelArea = this.calculatePanelArea(2, 1);
-
       const powerOutputs: any[] = [];
-
+  
       for (const date in ghiData) {
         const irradiation = ghiData[date];
-        const power = this.calculateSolarPower(irradiation, panelArea);
-
+        const power = this.calculateSolarPower(irradiation); 
+  
         powerOutputs.push({
           date,
           power: power.toFixed(2),
           irradiation,
         });
       }
-
+  
       console.log('Solar power calculations:', powerOutputs);
       return powerOutputs;
     }
-
+  
     return [];
   }
 
