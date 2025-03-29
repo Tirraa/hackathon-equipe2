@@ -42,9 +42,10 @@ export class WeatherService {
       const powerOutputs: PowerOutput[] = [];
 
       for (const date in windSpeeds) {
-        const windSpeed = windSpeeds[date];
-        const temperature = temperatures[date];
-        const pressure = pressures[date];
+        const windSpeed = windSpeeds[date]; 
+        const temperature = temperatures[date] + 273.15;
+        const pressure = pressures[date] * 100;
+        console.log(temperature, pressure)
         const airDensity = this.calculateAirDensity(temperature, pressure);
 
         powerOutputs.push({
@@ -66,8 +67,9 @@ export class WeatherService {
       );
       const totalAirDensityAvg = totalAirDensity / powerOutputs.length;
 
+      console.log(totalWindSpeedAvg, totalAirDensityAvg)
       return {
-        windSpeedAvg: totalWindSpeedAvg,
+        windSpeedAvg: totalWindSpeedAvg,  
         airDensityAvg: totalAirDensityAvg,
       };
     }
@@ -195,11 +197,11 @@ export class WeatherService {
     url.searchParams.append('format', 'JSON');
 
     if(type === DateType.MONTH){
-      url.searchParams.append('start', request.start.getFullYear().toString());
-      url.searchParams.append('end', request.end.getFullYear().toString());
+      url.searchParams.append('start', new Date(request.start).getFullYear().toString());
+      url.searchParams.append('end', new Date(request.end).getFullYear().toString());
     } else {
-      url.searchParams.append('start', formatDate(request.start));
-      url.searchParams.append('end', formatDate(request.end));
+      url.searchParams.append('start', formatDate(new Date(request.start)));
+      url.searchParams.append('end', formatDate(new Date(request.end)));
     }
     
 
