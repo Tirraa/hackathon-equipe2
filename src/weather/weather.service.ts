@@ -2,21 +2,25 @@ import { Injectable } from '@nestjs/common';
 import { GraphData } from './models/GraphData';
 import axios from 'axios';
 import { GraphRequestDto } from './dto/GraphRequest';
+import { formatDate, parseDate } from 'src/utils/date';
 
 export interface PowerOutput {
   date: string;
-  power: string;
   windSpeed: number;
-  temperature: number;
-  airDensity: string;
+  airDensity: number;
+}
+
+enum DateType {
+  DAY = "daily",
+  MONTH = "monthly",
+  YEAR = "year",
 }
 
 @Injectable()
 export class WeatherService {
-  private readonly BASE_URL = 'https://power.larc.nasa.gov/api/temporal';
+  private readonly BASE_URL = 'https://power.larc.nasa.gov';
   private readonly R = 287.05; // Constante spécifique de l'air sec en J/(kg·K)
-  private readonly RADIUS = 120; // Rayon des pales en mètres M
-  private readonly CP = 0.45; // Coefficient de performance moyen
+  private nasaNotAValue = -999;
 
   private calculateAirDensity(
     temperatureCelsius: number,
@@ -26,15 +30,10 @@ export class WeatherService {
     return pression / (this.R * temperatureKelvin);
   }
 
-  private calculateWindPower(airDensity: number, windSpeed: number): number {
-    const A = Math.PI * Math.pow(this.RADIUS, 2);
-    return 0.5 * airDensity * A * Math.pow(windSpeed, 3) * this.CP;
-  }
-
-  async getWindPuissance(request: GraphRequestDto): Promise<PowerOutput[]> {
-    const res = await axios.get(
-      `${this.BASE_URL}/daily/point?parameters=WS10M,T2M,PS&community=RE&longitude=2.3522&latitude=48.8566&start=20240301&end=20240310&format=JSON`,
-    );
+  async getWindPower(
+    request: GraphRequestDto,
+  ): Promise<{ windSpeedAvg: number; airDensityAvg: number }> {
+    const res = await axios.get(this.getUrl('WS10M,T2M,PS', request, DateType.MONTH));
 
     if (res?.data?.properties?.parameter) {
       const windSpeeds = res.data.properties.parameter.WS10M;
@@ -47,84 +46,82 @@ export class WeatherService {
         const temperature = temperatures[date];
         const pressure = pressures[date];
         const airDensity = this.calculateAirDensity(temperature, pressure);
-        const power = this.calculateWindPower(airDensity, windSpeed);
 
         powerOutputs.push({
           date,
-          power: power.toFixed(2),
           windSpeed,
-          temperature,
-          airDensity: airDensity.toFixed(3),
+          airDensity: Number(airDensity.toFixed(3)),
         });
       }
 
-      console.log('Wind power calculations:', powerOutputs);
-      return powerOutputs;
+      const totalWindSpeed = powerOutputs.reduce(
+        (sum, entry) => sum + entry.windSpeed,
+        0,
+      );
+      const totalWindSpeedAvg = totalWindSpeed / powerOutputs.length;
+
+      const totalAirDensity = powerOutputs.reduce(
+        (sum, entry) => sum + entry.airDensity,
+        0,
+      );
+      const totalAirDensityAvg = totalAirDensity / powerOutputs.length;
+
+      return {
+        windSpeedAvg: totalWindSpeedAvg,
+        airDensityAvg: totalAirDensityAvg,
+      };
     }
 
-    return [];
+    return { windSpeedAvg: 0, airDensityAvg: 0 };
   }
 
-  private readonly PANEL_EFFICIENCY = 0.18; // Rendement moyen des panneaux solaires
-  private readonly PANEL_SURFACE = 2; // Surface du panneau en m² (par exemple 2m x 1m)
+  async getSolarPower(request: GraphRequestDto): Promise<number> {
+    const res = await axios.get(this.getUrl('ALLSKY_SFC_SW_DWN', request, DateType.MONTH));
 
-  private calculateSolarPower(irradiation: number): number {
-    const panelArea = this.PANEL_SURFACE; 
-    return irradiation * panelArea * this.PANEL_EFFICIENCY; 
-  }
-
-  private calculatePanelArea(panelWidth: number, panelHeight: number): number {
-    return panelWidth * panelHeight;
-  }
-
-  async getSolarPower(request: GraphRequestDto): Promise<any[]> {
-    const res = await axios.get(
-      `${this.BASE_URL}/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=2.3522&latitude=48.8566&start=20240301&end=20240310&format=JSON`,
-    );
-  
     if (res?.data?.properties?.parameter) {
       const ghiData = res.data.properties.parameter.ALLSKY_SFC_SW_DWN;
       const powerOutputs: any[] = [];
-  
+
       for (const date in ghiData) {
         const irradiation = ghiData[date];
-        const power = this.calculateSolarPower(irradiation); 
-  
+
         powerOutputs.push({
           date,
-          power: power.toFixed(2),
           irradiation,
         });
       }
-  
-      console.log('Solar power calculations:', powerOutputs);
-      return powerOutputs;
+
+      if (powerOutputs.length === 0) return 0;
+
+      const totalIrradiation = powerOutputs.reduce(
+        (sum, entry) => sum + entry.irradiation,
+        0,
+      );
+      return totalIrradiation / powerOutputs.length;
     }
-  
-    return [];
+
+    return 0;
   }
 
-  async getSolarGraph(request: GraphRequestDto): Promise<GraphData[]> {
-    const res = await axios.get(
-      `${this.BASE_URL}/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=${request.lng}&latitude=${request.lat}&start=${this.formatDate(request.start)}&end=${this.formatDate(request.end)}&format=JSON`,
-    );
+  async getSolarGraph(request: GraphRequestDto): Promise<GraphData> {
+    const res = await axios.get(this.getUrl('ALLSKY_SFC_SW_DWN', request));
     const a = new GraphData();
-    return [];
+    return a;
   }
 
   async getWindGraph(request: GraphRequestDto): Promise<GraphData> {
     const res = await axios.get(this.getUrl('WS10M', request));
     const data = new GraphData();
 
-    const WS10M = res?.data?.properties?.parameter?.WS10M;
+    const windData = res?.data?.properties?.parameter?.WS10M;
 
-    if (!WS10M) {
+    if (!windData) {
       return data;
     }
 
-    const entries = Object.entries(WS10M);
+    const entries = Object.entries(windData);
 
-    data.xValues = entries.map(([key]) => this.parseDate(key).getTime());
+    data.xValues = entries.map(([key]) => parseDate(key).getTime());
     data.yValues = entries.map(([_, value]) => {
       const val = Number(value);
       return isNaN(val) || val < 0 ? 0 : val;
@@ -141,15 +138,15 @@ export class WeatherService {
     const res = await axios.get(this.getUrl('PRECTOTCORR', request));
     const data = new GraphData();
 
-    const WS10M = res?.data?.properties?.parameter?.PRECTOTCORR;
+    const rainData = res?.data?.properties?.parameter?.PRECTOTCORR;
 
-    if (!WS10M) {
+    if (!rainData) {
       return data;
     }
 
-    const entries = Object.entries(WS10M);
+    const entries = Object.entries(rainData);
 
-    data.xValues = entries.map(([key]) => this.parseDate(key).getTime());
+    data.xValues = entries.map(([key]) => parseDate(key).getTime());
     data.yValues = entries.map(([_, value]) => {
       const val = Number(value);
       return isNaN(val) || val < 0 ? 0 : val;
@@ -162,34 +159,50 @@ export class WeatherService {
     return data;
   }
 
-  private getUrl(parameter: string, request: GraphRequestDto): string {
-    return `${this.BASE_URL}/daily/point?parameters=${parameter}&community=RE&longitude=${request.lng}&latitude=${request.lat}&start=${this.formatDate(request.start)}&end=${this.formatDate(request.end)}&format=JSON`;
-  }
+  async getTemperatureGraph(request: GraphRequestDto): Promise<GraphData> {
+    const res = await axios.get(this.getUrl('T2M', request));
+    const data = new GraphData();
 
-  private formatDate(date: Date): string {
-    return (
-      date.getFullYear() +
-      String(date.getMonth() + 1).padStart(2, '0') +
-      String(date.getDate()).padStart(2, '0')
-    );
-  }
+    const tempData = res?.data?.properties?.parameter?.T2M;
 
-  private parseDate(dateString: string): Date {
-    const match: RegExpMatchArray | null = dateString.match(
-      /(\d{4})(\d{2})(\d{2})/,
-    );
-
-    if (!match) {
-      throw new Error('Format de date invalide. Attendu: YYYYMMDD');
+    if (!tempData) {
+      return data;
     }
 
-    const year: number = Number(match[1]);
-    const month: number = Number(match[2]) - 1; // Mois commence à 0 en JS
-    const day: number = Number(match[3]);
+    const entries = Object.entries(tempData);
 
-    return new Date(year, month, day);
+    data.xValues = entries.map(([key]) => parseDate(key).getTime());
+    data.yValues = entries.map(([_, value]) => {
+      const val = Number(value);
+      return isNaN(val) ? 0 : val;
+    });
+
+    data.label = 'temperature-graph-label';
+    data.xLabel = 'temperature-graph-x-label';
+    data.yLabel = 'temperature-graph-y-label';
+
+    return data;
+  }
+
+  
+  private getUrl(parameter: string, request: GraphRequestDto, type?: DateType): string {
+    const url = new URL(`/api/temporal/${type ||DateType.DAY}/point`, this.BASE_URL);
+
+    url.searchParams.append('parameters', parameter);
+    url.searchParams.append('community', 'RE');
+    url.searchParams.append('longitude', request.lng.toString());
+    url.searchParams.append('latitude', request.lat.toString());
+    url.searchParams.append('format', 'JSON');
+
+    if(type === DateType.MONTH){
+      url.searchParams.append('start', request.start.getFullYear().toString());
+      url.searchParams.append('end', request.end.getFullYear().toString());
+    } else {
+      url.searchParams.append('start', formatDate(request.start));
+      url.searchParams.append('end', formatDate(request.end));
+    }
+    
+
+    return url.toString();
   }
 }
-
-//WINd : https://power.larc.nasa.gov/api/temporal/daily/point?parameters=WS10M&community=RE&longitude=2.3522&latitude=48.8566&start=20240301&end=20240310&format=JSON
-//Pluie : https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=RE&longitude=2.3522&latitude=48.8566&start=20240301&end=20240310&format=JSON

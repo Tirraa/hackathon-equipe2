@@ -3,14 +3,15 @@ export enum ProductType {
     WIND
 }
 
-export class productData {
+export class Product {
+    id: number;
     label: string;
-    recommended: string;
-    production: string;
-    maintenance: string;
+    recommended?: string;
+    production?: number;
+    maintenance?: string;
     price: string;
     link: string;
-    nbBlades?: string; // Rayon des pales en mètres M
-    sfPanel?: string; // Surface des panneaux solaires en m² 
+    nbBlades?: number; // Rayon des pales en mètres M
+    sfPanel?: number; // Surface des panneaux solaires en m² 
     type: ProductType;
 }
