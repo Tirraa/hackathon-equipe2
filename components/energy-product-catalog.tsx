@@ -6,26 +6,22 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ApiProduct, productService } from "@/lib/api";
+import { type ApiProduct, productService } from "@/lib/api";
 
 interface CartItem {
   product: ApiProduct;
   quantity: number;
 }
 
-interface EnergyProductCatalogProps {
-  userConsumption: number; // en kWh par an
-}
-
 interface EnergyRecommendationsProps {
-    lat: number
-    lng: number
-    name: string
+  lat: number;
+  lng: number;
+  name: string;
 }
 
 interface EnergyProductCatalogProps {
   userConsumption: number; // en kWh par an
-  recommendations: EnergyRecommendationsProps; // Ajout du prop de type EnergyRecommendationsProps
+  recommendations: EnergyRecommendationsProps;
 }
 
 export default function EnergyProductCatalog({
@@ -51,7 +47,7 @@ export default function EnergyProductCatalog({
     }
 
     fetchProducts();
-  }, [userConsumption, location]);
+  }, [userConsumption, recommendations]);
 
   const addToCart = (product: ApiProduct) => {
     setCart((prevCart) => {
@@ -92,17 +88,21 @@ export default function EnergyProductCatalog({
     return item ? item.quantity : 0;
   };
 
-  const totalProduction = cart.reduce(
-    (total, item) => total + item.product.production * item.quantity,
-    0
-  );
+  // Conversion de W/h à kWh/an: W/h * 24h * 365j / 1000
+  const totalProduction = cart.reduce((total, item) => {
+    const annualProduction = (item.product.production * 24 * 365) / 1000;
+    return total + annualProduction * item.quantity;
+  }, 0);
 
   const coveragePercentage = Math.min(
     (totalProduction / userConsumption) * 100,
     100
   );
 
-  const totalPrice = 1; //cart.reduce((total, item) => total + item.product.price * item.quantity, 0)
+  const totalPrice = cart.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0
+  );
 
   if (loading) return <div>Chargement...</div>;
 
@@ -118,7 +118,7 @@ export default function EnergyProductCatalog({
           </div>
           <div className="text-right">
             <p className="font-medium">
-              Production sélectionnée: {totalProduction} kWh/an
+              Production sélectionnée: {totalProduction.toFixed(2)} kWh/an
             </p>
             <p className="text-sm text-gray-600">
               {coveragePercentage.toFixed(1)}% de votre consommation
@@ -142,12 +142,20 @@ export default function EnergyProductCatalog({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((product) => {
           const quantity = getProductQuantity(product.id);
+          // Calcul de la production annuelle en kWh pour l'affichage
+          const annualProduction = (
+            (product.production * 24 * 365) /
+            1000
+          ).toFixed(2);
 
           return (
-            <Card key={product.id} className="overflow-hidden">
+            <Card
+              key={product.id}
+              className="overflow-hidden flex flex-col h-full"
+            >
               <div className="relative">
                 <img
-                  src={product.link || "/placeholder.svg"}
+                  src={product.image || "/placeholder.svg"}
                   alt={product.label}
                   className="w-full h-48 object-cover"
                 />
@@ -160,16 +168,28 @@ export default function EnergyProductCatalog({
                 </Badge>
               </div>
 
-              <CardContent className="pt-4">
+              <CardContent className="pt-4 flex-grow">
                 <h3 className="font-bold text-lg mb-2">{product.label}</h3>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Production:</span>
                     <span className="font-medium">
-                      {product.production} kWh/an
+                      {product.production} W/h
                     </span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Production annuelle:</span>
+                    <span className="font-medium">
+                      {annualProduction} kWh/an
+                    </span>
+                  </div>
+                  {product.sfPanel && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Surface:</span>
+                      <span className="font-medium">{product.sfPanel} m²</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 text-xl font-bold text-right">
@@ -177,7 +197,7 @@ export default function EnergyProductCatalog({
                 </div>
               </CardContent>
 
-              <CardFooter className="pt-0">
+              <CardFooter className="pt-0 mt-auto">
                 {quantity === 0 ? (
                   <Button
                     onClick={() => addToCart(product)}

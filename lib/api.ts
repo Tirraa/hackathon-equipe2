@@ -5,15 +5,16 @@ export interface ApiProduct {
   label: string;
   type: number;
   link: string;
-  price: string;
+  price: number;
+  image: string;
   production: number;
   sfPanel: number;
 }
 
 interface EnergyRecommendationsProps {
-  lat: number
-  lng: number
-  name: string
+  lat: number;
+  lng: number;
+  name: string;
 }
 
 export const productService = {
@@ -30,7 +31,14 @@ export const productService = {
 
       if (!response.ok) throw new Error("Erreur lors du fetch des produits");
 
-      const products: ApiProduct[] = await response.json();
+      var products: ApiProduct[] = await response.json();
+      products = products.map((el) => {
+        el.price = 12;
+        el.image =
+          "https://m.media-amazon.com/images/I/41v1B-bkQML._SY445_SX342_QL70_ML2_.jpg";
+        return el;
+      });
+
       return products;
     } catch (error) {
       console.error("Erreur API:", error);
