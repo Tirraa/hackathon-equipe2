@@ -26,6 +26,9 @@ Zobie le Climat est une application innovante qui aide à déterminer la meilleu
 
 ## 📊 Endpoints API
 
+### Données produits
+- `GET /product` : Données des produits ( avec tout les calculs pour la production de chaques produits suivant la zone )
+
 ### Données météorologiques
 - `GET /weather/graph/solar` : Données d'irradiation solaire
 - `GET /weather/graph/wind` : Données de vitesse du vent
@@ -59,7 +62,6 @@ npm run start:dev
 L'application nécessite les paramètres suivants pour fonctionner :
 - Latitude
 - Longitude
-- Période d'analyse (dates de début et de fin)
 
 ## 📝 Formules utilisées
 
@@ -84,11 +86,11 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+Ce projet est sous licence GPL. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 👥 Auteurs
 
-- [Votre Nom/Équipe]
+- l'équipe 2 de quattres puis trois puis de deux. 
 
 ---
 Développé avec ❤️ pour un avenir plus vert
