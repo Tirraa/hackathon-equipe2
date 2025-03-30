@@ -127,7 +127,7 @@ export default function Home() {
               <span className="text-green-600">⚡</span> Solutions Énergétiques
               Durables
             </h1>
-            <EnergyProductCatalog userConsumption={5000} />
+            <EnergyProductCatalog userConsumption={5000} recommendations={location}/>
           </>
         )}
       </div>

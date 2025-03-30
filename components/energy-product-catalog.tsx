@@ -1,134 +1,128 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ShoppingCart, Plus, Minus, Zap } from "lucide-react"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-
-interface Product {
-  id: string
-  name: string
-  type: "solar" | "wind"
-  image: string
-  price: number
-  production: number
-  power: number
-  dimensions: string
-  efficiency: number
-  warranty: number
-}
+import { useEffect, useState } from "react";
+import { ShoppingCart, Plus, Minus } from "lucide-react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ApiProduct, productService } from "@/lib/api";
 
 interface CartItem {
-  product: Product
-  quantity: number
+  product: ApiProduct;
+  quantity: number;
 }
 
 interface EnergyProductCatalogProps {
-  userConsumption: number // en kWh par an
+  userConsumption: number; // en kWh par an
 }
 
-const products: Product[] = [
-  {
-    id: "solar-1",
-    name: "SolarMax Pro",
-    type: "solar",
-    image: "/placeholder.svg?height=200&width=300",
-    price: 450,
-    production: 380, // kWh par an
-    power: 400, // Watts
-    dimensions: "1.7m x 1.0m",
-    efficiency: 21.3,
-    warranty: 25,
-  },
-  {
-    id: "solar-2",
-    name: "EcoPanel Plus",
-    type: "solar",
-    image: "/placeholder.svg?height=200&width=300",
-    price: 320,
-    production: 310, // kWh par an
-    power: 330, // Watts
-    dimensions: "1.6m x 0.9m",
-    efficiency: 19.8,
-    warranty: 20,
-  },
-  {
-    id: "wind-1",
-    name: "WindTech 1000",
-    type: "wind",
-    image: "/placeholder.svg?height=200&width=300",
-    price: 1200,
-    production: 1200, // kWh par an
-    power: 1000, // Watts
-    dimensions: "Ø 1.8m",
-    efficiency: 38.5,
-    warranty: 15,
-  },
-  {
-    id: "wind-2",
-    name: "MicroWind 500",
-    type: "wind",
-    image: "/placeholder.svg?height=200&width=300",
-    price: 850,
-    production: 750, // kWh par an
-    power: 500, // Watts
-    dimensions: "Ø 1.2m",
-    efficiency: 35.2,
-    warranty: 12,
-  },
-]
+interface EnergyRecommendationsProps {
+    lat: number
+    lng: number
+    name: string
+}
 
-export default function EnergyProductCatalog({ userConsumption }: EnergyProductCatalogProps) {
-  const [cart, setCart] = useState<CartItem[]>([])
+interface EnergyProductCatalogProps {
+  userConsumption: number; // en kWh par an
+  recommendations: EnergyRecommendationsProps; // Ajout du prop de type EnergyRecommendationsProps
+}
 
-  const addToCart = (product: Product) => {
+export default function EnergyProductCatalog({
+  userConsumption,
+  recommendations,
+}: EnergyProductCatalogProps) {
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoading(true);
+        // Si une localisation est fournie, récupérer les produits recommandés
+        const data = await productService.getAllProducts(recommendations);
+        setProducts(data);
+      } catch (err) {
+        console.error("Erreur lors du chargement des produits:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, [userConsumption, location]);
+
+  const addToCart = (product: ApiProduct) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.product.id === product.id)
+      const existingItem = prevCart.find(
+        (item) => item.product.id === product.id
+      );
       if (existingItem) {
         return prevCart.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        )
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
       } else {
-        return [...prevCart, { product, quantity: 1 }]
+        return [...prevCart, { product, quantity: 1 }];
       }
-    })
-  }
+    });
+  };
 
   const removeFromCart = (productId: string) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.product.id === productId)
+      const existingItem = prevCart.find(
+        (item) => item.product.id === productId
+      );
       if (existingItem && existingItem.quantity > 1) {
-        return prevCart.map((item) => (item.product.id === productId ? { ...item, quantity: item.quantity - 1 } : item))
+        return prevCart.map((item) =>
+          item.product.id === productId
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        );
       } else {
-        return prevCart.filter((item) => item.product.id !== productId)
+        return prevCart.filter((item) => item.product.id !== productId);
       }
-    })
-  }
+    });
+  };
 
   const getProductQuantity = (productId: string): number => {
-    const item = cart.find((item) => item.product.id === productId)
-    return item ? item.quantity : 0
-  }
+    const item = cart.find((item) => item.product.id === productId);
+    return item ? item.quantity : 0;
+  };
 
-  const totalProduction = cart.reduce((total, item) => total + item.product.production * item.quantity, 0)
+  const totalProduction = cart.reduce(
+    (total, item) => total + item.product.production * item.quantity,
+    0
+  );
 
-  const coveragePercentage = Math.min((totalProduction / userConsumption) * 100, 100)
+  const coveragePercentage = Math.min(
+    (totalProduction / userConsumption) * 100,
+    100
+  );
 
-  const totalPrice = cart.reduce((total, item) => total + item.product.price * item.quantity, 0)
+  const totalPrice = 1; //cart.reduce((total, item) => total + item.product.price * item.quantity, 0)
+
+  if (loading) return <div>Chargement...</div>;
 
   return (
     <div className="space-y-8">
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-xl font-semibold">Votre consommation énergétique</h2>
+            <h2 className="text-xl font-semibold">
+              Votre consommation énergétique
+            </h2>
             <p className="text-gray-600">{userConsumption} kWh/an</p>
           </div>
           <div className="text-right">
-            <p className="font-medium">Production sélectionnée: {totalProduction} kWh/an</p>
-            <p className="text-sm text-gray-600">{coveragePercentage.toFixed(1)}% de votre consommation</p>
+            <p className="font-medium">
+              Production sélectionnée: {totalProduction} kWh/an
+            </p>
+            <p className="text-sm text-gray-600">
+              {coveragePercentage.toFixed(1)}% de votre consommation
+            </p>
           </div>
         </div>
         <Progress value={coveragePercentage} className="h-4" />
@@ -136,7 +130,9 @@ export default function EnergyProductCatalog({ userConsumption }: EnergyProductC
         <div className="mt-4 flex justify-between items-center">
           <div className="text-sm text-gray-600">
             {coveragePercentage < 100
-              ? `Il vous manque ${(userConsumption - totalProduction).toFixed(0)} kWh/an pour couvrir votre consommation`
+              ? `Il vous manque ${(userConsumption - totalProduction).toFixed(
+                  0
+                )} kWh/an pour couvrir votre consommation`
               : "Votre consommation est entièrement couverte !"}
           </div>
           <div className="font-semibold">Total: {totalPrice.toFixed(2)} €</div>
@@ -145,75 +141,76 @@ export default function EnergyProductCatalog({ userConsumption }: EnergyProductC
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((product) => {
-          const quantity = getProductQuantity(product.id)
+          const quantity = getProductQuantity(product.id);
 
           return (
             <Card key={product.id} className="overflow-hidden">
               <div className="relative">
                 <img
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.name}
+                  src={product.link || "/placeholder.svg"}
+                  alt={product.label}
                   className="w-full h-48 object-cover"
                 />
                 <Badge
-                  className={`absolute top-2 right-2 ${product.type === "solar" ? "bg-amber-500" : "bg-blue-500"}`}
+                  className={`absolute top-2 right-2 ${
+                    product.type === 0 ? "bg-amber-500" : "bg-blue-500"
+                  }`}
                 >
-                  {product.type === "solar" ? "Solaire" : "Éolien"}
+                  {product.type === 0 ? "Solaire" : "Éolien"}
                 </Badge>
               </div>
 
               <CardContent className="pt-4">
-                <h3 className="font-bold text-lg mb-2">{product.name}</h3>
+                <h3 className="font-bold text-lg mb-2">{product.label}</h3>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Production:</span>
-                    <span className="font-medium">{product.production} kWh/an</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Puissance:</span>
-                    <span className="font-medium">{product.power} W</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Dimensions:</span>
-                    <span className="font-medium">{product.dimensions}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Efficacité:</span>
-                    <span className="font-medium">{product.efficiency}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Garantie:</span>
-                    <span className="font-medium">{product.warranty} ans</span>
+                    <span className="font-medium">
+                      {product.production} kWh/an
+                    </span>
                   </div>
                 </div>
 
-                <div className="mt-4 text-xl font-bold text-right">{product.price} €</div>
+                <div className="mt-4 text-xl font-bold text-right">
+                  {product.price} €
+                </div>
               </CardContent>
 
               <CardFooter className="pt-0">
                 {quantity === 0 ? (
-                  <Button onClick={() => addToCart(product)} className="w-full" variant="default">
+                  <Button
+                    onClick={() => addToCart(product)}
+                    className="w-full"
+                    variant="default"
+                  >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Ajouter au panier
                   </Button>
                 ) : (
                   <div className="flex items-center justify-between w-full">
-                    <Button variant="outline" size="icon" onClick={() => removeFromCart(product.id)}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeFromCart(product.id)}
+                    >
                       <Minus className="h-4 w-4" />
                     </Button>
                     <span className="font-medium">{quantity}</span>
-                    <Button variant="outline" size="icon" onClick={() => addToCart(product)}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => addToCart(product)}
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
               </CardFooter>
             </Card>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
-
