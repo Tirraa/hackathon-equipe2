@@ -67,12 +67,12 @@ L'application nécessite les paramètres suivants pour fonctionner :
 
 ### Énergie solaire
 ```
-Énergie = Irradiation × Surface × Rendement × Heures d'ensoleillement / 100
+Énergie = Irradiation × Surface × Rendement × Heures d'ensoleillement 
 ```
 
 ### Énergie éolienne
 ```
-Énergie = 0.5 × Densité de l'air × Surface des pales × Vitesse du vent³
+Énergie = 0.5 × Densité de l'air ( préssion x température) × Surface des pales × Vitesse du vent³
 ```
 
 ## 🤝 Contribution
