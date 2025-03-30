@@ -23,7 +23,7 @@ export class ProductService {
 
       if (product.type == ProductType.SOLAR && product.sfPanel) {
         product.production =
-          solarPower * product.sfPanel * this.SOLAR_PANEL_EFFICIENCY;
+          solarPower * product.sfPanel * this.SOLAR_PANEL_EFFICIENCY * 10;
       }
 
       if (product.type == ProductType.WIND) {
