@@ -11,6 +11,18 @@ export interface ApiProduct {
   sfPanel: number;
 }
 
+export interface EnergieRecommendation {
+  energieSolaire: {
+    puissance: number;
+    tauxRecommandation: number;
+  };
+  energieEolienne: {
+    puissance: number;
+    tauxRecommandation: number;
+  };
+  message: string;
+}
+
 interface EnergyRecommendationsProps {
   lat: number;
   lng: number;
@@ -31,18 +43,35 @@ export const productService = {
 
       if (!response.ok) throw new Error("Erreur lors du fetch des produits");
 
-      var products: ApiProduct[] = await response.json();
-      products = products.map((el) => {
-        el.price = 12;
-        el.image =
-          "https://m.media-amazon.com/images/I/41v1B-bkQML._SY445_SX342_QL70_ML2_.jpg";
-        return el;
-      });
+      const products: ApiProduct[] = await response.json();
 
       return products;
     } catch (error) {
       console.error("Erreur API:", error);
       return [];
+    }
+  },
+};
+
+export const weatherService = {
+  async getAllRecommendations(
+    loc: EnergyRecommendationsProps
+  ): Promise<EnergieRecommendation> {
+    const url = new URL(`${API_BASE_URL}/weather/power/recommendation`);
+    url.searchParams.append("lat", loc.lat.toString());
+    url.searchParams.append("lng", loc.lng.toString());
+
+    try {
+      const response = await fetch(url.toString());
+
+      if (!response.ok)
+        throw new Error("Erreur lors de la récupération des recommendations");
+
+      const recommendations: EnergieRecommendation = await response.json();
+      return recommendations;
+    } catch (error) {
+      console.error("Erreur API:", error);
+      return {} as any;
     }
   },
 };
