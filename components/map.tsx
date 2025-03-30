@@ -7,9 +7,8 @@ import "leaflet/dist/leaflet.css"
 
 // Fix Leaflet icon issues
 const icon = L.icon({
-  iconUrl: "/marker-icon.png",
-  shadowUrl: "/marker-shadow.png",
-  iconSize: [25, 41],
+  iconUrl: "/ping.png",
+  iconSize: [50, 66],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
