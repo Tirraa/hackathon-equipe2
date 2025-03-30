@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Zap, Calculator, BarChart3 } from "lucide-react";
+import { MapPin, Zap } from "lucide-react";
 import LocationSearch from "@/components/location-search";
 import EnergyRecommendations from "@/components/energy-recommendations";
 import ClimateCharts from "@/components/climate-charts";
@@ -124,10 +124,10 @@ export default function Home() {
         {location && (
           <>
             <h1 className="text-3xl font-bold mb-8 flex items-center gap-2">
-              <span className="text-green-600">⚡</span> Solutions Énergétiques
+              <span> <Zap className="h-5 w-5 text-primary" /></span> Solutions Énergétiques
               Durables
             </h1>
-            <EnergyProductCatalog userConsumption={5000} recommendations={location}/>
+            <EnergyProductCatalog recommendations={location} />
           </>
         )}
       </div>

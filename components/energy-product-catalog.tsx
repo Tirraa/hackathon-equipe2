@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { type ApiProduct, productService } from "@/lib/api";
+import { Input } from "./ui/input";
 
 interface CartItem {
   product: ApiProduct;
@@ -20,17 +21,16 @@ interface EnergyRecommendationsProps {
 }
 
 interface EnergyProductCatalogProps {
-  userConsumption: number; // en kWh par an
   recommendations: EnergyRecommendationsProps;
 }
 
 export default function EnergyProductCatalog({
-  userConsumption,
   recommendations,
 }: EnergyProductCatalogProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [energyConsumption, setEnergyConsumption] = useState<number>(2500);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -47,7 +47,7 @@ export default function EnergyProductCatalog({
     }
 
     fetchProducts();
-  }, [userConsumption, recommendations]);
+  }, [recommendations]);
 
   const addToCart = (product: ApiProduct) => {
     setCart((prevCart) => {
@@ -95,7 +95,7 @@ export default function EnergyProductCatalog({
   }, 0);
 
   const coveragePercentage = Math.min(
-    (totalProduction / userConsumption) * 100,
+    (totalProduction / energyConsumption) * 100,
     100
   );
 
@@ -104,17 +104,33 @@ export default function EnergyProductCatalog({
     0
   );
 
-  if (loading) return <div>Chargement...</div>;
+  if (loading)
+    return (
+      <div className="space-y-4 py-8">
+        <div className="h-4 w-full bg-muted rounded animate-pulse" />
+        <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+        <div className="h-4 w-5/6 bg-muted rounded animate-pulse" />
+      </div>
+    );
 
   return (
     <div className="space-y-8">
+      <Input
+        placeholder="Votre consommation annuelle en kWh"
+        value={energyConsumption}
+        onChange={(e) =>
+          setEnergyConsumption(Number.parseInt(e.target.value) || 0)
+        }
+        className="w-full"
+        type="number"
+      />
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-xl font-semibold">
               Votre consommation énergétique
             </h2>
-            <p className="text-gray-600">{userConsumption} kWh/an</p>
+            <p className="text-gray-600">{energyConsumption} kWh/an</p>
           </div>
           <div className="text-right">
             <p className="font-medium">
@@ -130,7 +146,7 @@ export default function EnergyProductCatalog({
         <div className="mt-4 flex justify-between items-center">
           <div className="text-sm text-gray-600">
             {coveragePercentage < 100
-              ? `Il vous manque ${(userConsumption - totalProduction).toFixed(
+              ? `Il vous manque ${(energyConsumption - totalProduction).toFixed(
                   0
                 )} kWh/an pour couvrir votre consommation`
               : "Votre consommation est entièrement couverte !"}
