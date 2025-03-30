@@ -90,7 +90,7 @@ Ce projet est sous licence GPL. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 👥 Auteurs
 
-- l'équipe 2 de quattres puis trois puis de deux. 
+- l'équipe 2 de quatre puis trois puis de deux. 
 
 ---
 Développé avec ❤️ pour un avenir plus vert
