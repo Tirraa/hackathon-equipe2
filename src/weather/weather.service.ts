@@ -32,7 +32,7 @@ export class WeatherService {
   }
 
   private calculerEnergieSolaire(irradiation: number, surface: number, rendement: number, heuresEnsoleillement: number): number {
-    return irradiation * surface * rendement * heuresEnsoleillement;
+    return irradiation * surface * rendement * heuresEnsoleillement / 100;
   }
 
   private calculerEnergieEolienne(vitesseVent: number, surfacePales: number, densiteAir: number = 1.225): number {
@@ -73,6 +73,7 @@ export class WeatherService {
     const energieEolienne = this.calculerEnergieEolienne(windSpeedAvg, 100, airDensity);
 
     const { productionSolaireAnnuelle, productionEolienneAnnuelle } = this.productionAnnuelle(energieSolaire, energieEolienne);
+
 
     const totalProduction = productionSolaireAnnuelle + productionEolienneAnnuelle;
     const pourcentageSolaire = (productionSolaireAnnuelle / totalProduction) * 100;

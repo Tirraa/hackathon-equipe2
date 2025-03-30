@@ -22,8 +22,8 @@ export class ProductService {
       const panelArea = product.sfPanel;
 
       if (product.type == ProductType.SOLAR && product.sfPanel) {
-        product.production =
-          solarPower * product.sfPanel * this.SOLAR_PANEL_EFFICIENCY * 10;
+        const power = (solarPower * product.sfPanel * this.SOLAR_PANEL_EFFICIENCY * 10).toFixed(2);
+        product.production = Number(power);
       }
 
       if (product.type == ProductType.WIND) {
