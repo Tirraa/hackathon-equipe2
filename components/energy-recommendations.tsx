@@ -79,20 +79,6 @@ export default function EnergyRecommendations({ location }: EnergyRecommendation
         color: "text-blue-500",
         description: "Basé sur la vitesse moyenne du vent et sa constance",
       },
-      {
-        type: "Hydraulique",
-        score: Math.round(hydroScore),
-        icon: <Droplets className="h-5 w-5" />,
-        color: "text-cyan-500",
-        description: "Basé sur les précipitations et la proximité des cours d'eau",
-      },
-      {
-        type: "Géothermique",
-        score: Math.round(geothermalScore),
-        icon: <ThermometerSun className="h-5 w-5" />,
-        color: "text-orange-500",
-        description: "Basé sur les caractéristiques géologiques locales",
-      },
     ]
   }
 
