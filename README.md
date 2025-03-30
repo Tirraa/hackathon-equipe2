@@ -13,7 +13,6 @@ Zobie le Climat est une application innovante qui aide à déterminer la meilleu
 - **Visualisations** :
   - Graphiques de température
   - Graphiques de vitesse du vent
-  - Graphiques de température solaire
   - Graphiques de précipitations
 - **Recommandations** : Analyse comparative des sources d'énergie avec pourcentages de recommandation
 
