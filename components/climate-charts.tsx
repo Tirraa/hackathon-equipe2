@@ -95,7 +95,7 @@ export default function ClimateCharts({ location }: ClimateChartsProps) {
   return (
     <div className="space-y-4">
       <Tabs defaultValue="wind" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4">
+        <TabsList className="grid grid-cols-3">
           <TabsTrigger value="wind" className="flex items-center gap-1">
             <Wind className="h-4 w-4" />
             <span className="hidden sm:inline">Vent</span>
