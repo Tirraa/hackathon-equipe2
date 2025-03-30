@@ -27,11 +27,12 @@ export class ProductService {
       }
 
       if (product.type == ProductType.WIND) {
-        product.production = this.calculateWindPower(
+        const power =  this.calculateWindPower(
           windPower.airDensityAvg,
           windPower.windSpeedAvg,
           product.nbBlades,
-        );
+        ).toFixed(2);
+        product.production = Number(power);
       }
 
       console.log(

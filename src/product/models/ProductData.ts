@@ -9,7 +9,8 @@ export class Product {
     recommended?: string;
     production?: number;
     maintenance?: string;
-    price: string;
+    image: string;
+    price: number;
     link: string;
     nbBlades?: number; // Rayon des pales en mètres M
     sfPanel?: number; // Surface des panneaux solaires en m² 
